@@ -12,7 +12,10 @@ app.use(cors())
 app.use('/api/files', fileRoutes)
 
 mongoose.set("strictQuery", false);
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
     .then(() => {
         app.listen(process.env.PORT, (req, res) => {
             console.log(`Server listening on ${process.env.PORT}`)
