@@ -1,31 +1,73 @@
 const Files = require('../model/fileModel.js')
+const express = require('express');
+const mongoose = require('mongoose');
+const { v4 } = require('uuid');
+console.log(v4);
+const router = express.Router()
+const multer = require('multer');
+const DIR = './public/';
 
-const createFile = async (req, res) => {
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, DIR)
+    },
+    filename: (req, file, cb) => {
+        const fileName = file.originalname.toLowerCase().split(' ').join('-')
+        cb(null, v4() + '-' + fileName)
+    }
+})
+
+const upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
+            cb(null, true);
+        } else {
+            cb(null, false);
+            return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+        }
+    }
+})
+
+
+router.post('/create', upload.array('files', 6), (req, res, next) => {
     const { files } = req.body
-
-    const file = await Files.create({ files })
-
-    if (!file) {
-        return res.status(404).json({ msg: 'File could not created' })
+    const reqFiles = [];
+    const url = req.protocol + '://' + req.get('host')
+    for (let i = 0; i < req.files.length; i++) {
+        reqFiles.push(url + '/public/' + req.files[i].filename)
     }
 
-    res.status(200).json({
-        success: true,
-        data: file
+    const file = new Files({
+        _id: new mongoose.Types.ObjectId(),
+        files: reqFiles
     })
-}
 
-const getFiles = async (req, res) => {
-    const files = await Files.find({})
-
-    if (!files) {
-        return res.status(404).json({ msg: 'File could not Found' })
-    }
-
-    res.status(200).json({
-        success: true,
-        data: files
+    file.save().then(result => {
+        res.status(201).json({
+            msg: 'Uploaded!',
+            userCreated: {
+                _id: result._id,
+                files: result.files
+            }
+        })
+    }).catch(err => {
+        console.log(err),
+            res.status(500).json({
+                error: err
+            });
     })
-}
+})
 
-module.exports = { createFile, getFiles }
+
+
+router.get("/", (req, res, next) => {
+    Files.find().then(data => {
+        res.status(200).json({
+            message: "Files list retrieved successfully!",
+            filesCollection: data
+        });
+    });
+});
+
+module.exports = router

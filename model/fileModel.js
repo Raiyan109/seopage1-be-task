@@ -3,11 +3,12 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema
 
 const fileSchema = new Schema({
+    _id: mongoose.Schema.Types.ObjectId,
     files: {
-        // data: Buffer,
-        // contentType: String
-        type: String
+        type: Array
     }
+}, {
+    collection: 'filesCollection'
 })
 
 module.exports = mongoose.model('Files', fileSchema)
