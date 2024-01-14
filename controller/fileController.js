@@ -2,7 +2,6 @@ const Files = require('../model/fileModel.js')
 const express = require('express');
 const mongoose = require('mongoose');
 const { v4 } = require('uuid');
-console.log(v4);
 const router = express.Router()
 const multer = require('multer');
 const DIR = './public/';
@@ -19,14 +18,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage: storage,
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
-            cb(null, true);
-        } else {
-            cb(null, false);
-            return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
-        }
-    }
+    // fileFilter: (req, file, cb) => {
+    //     if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
+    //         cb(null, true);
+    //     } else {
+    //         cb(null, false);
+    //         return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+    //     }
+    // }
 })
 
 
@@ -46,7 +45,7 @@ router.post('/create', upload.array('files', 6), (req, res, next) => {
     file.save().then(result => {
         res.status(201).json({
             msg: 'Uploaded!',
-            userCreated: {
+            fileCreated: {
                 _id: result._id,
                 files: result.files
             }
@@ -61,11 +60,14 @@ router.post('/create', upload.array('files', 6), (req, res, next) => {
 
 
 
-router.get("/", (req, res, next) => {
+router.get("/", async (req, res, next) => {
+    const totalFiles = await Files.countDocuments()
+    console.log(totalFiles);
     Files.find().then(data => {
         res.status(200).json({
             message: "Files list retrieved successfully!",
-            filesCollection: data
+            filesCollection: data,
+            totalFiles: totalFiles
         });
     });
 });
